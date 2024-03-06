@@ -12,7 +12,7 @@
 #include <netdb.h>
 #include "cJSON.h"
 
-int sevid; //服务器sevid
+
 char bufs[512] = "";//线程语句缓存
 int len;
 typedef struct clientid{
@@ -20,6 +20,7 @@ typedef struct clientid{
     struct  sockaddr_in csock;
     struct clientid *next;
 }cid_t;
+extern cid_t *client_list;
 
 cid_t * newLinkNode(int val){
     cid_t *cidlist;

@@ -1,6 +1,7 @@
 #include "chat_head.h"
 
-cid_t cid1 ;
+cid_t *client_list; // 定义client_list变量
+
 void * pthread_fun(void * arg)
 {
     //cid是从主线程传过来的。   
@@ -45,7 +46,7 @@ void * pthread_fun(void * arg)
 int Tcp_init(const char *ip, const char *port)
 {
     //1.创建套接字
-    sevid = socket(AF_INET, SOCK_STREAM, 0);  //服务器sevid
+    int sevid = socket(AF_INET, SOCK_STREAM, 0);  //服务器sevid
     if(sevid < 0)
     {
         perror("socket create fail!\n");
@@ -67,35 +68,39 @@ int Tcp_init(const char *ip, const char *port)
     }
     printf("bind success!\n");
 
-    acceptlink();
-
-    close(sevid);
-    return 0;
-}
-
-int acceptlink(){
-
     listen(sevid,10); //最大接收10个客户端连接请求
+
+
     pthread_t tid = 0;
-    
-    socklen_t addrlen = sizeof(cid1.csock);
+    socklen_t addrlen ;
+
     while(1)
     {
-        cid1.cidnum = accept(sevid,(struct sockaddr*)&cid1.csock,&addrlen);
-        if(cid1.cidnum !=-1)
+        cid_t *new_client = (cid_t*)malloc(sizeof(cid_t));
+        addrlen = sizeof(new_client->csock);
+        new_client->cidnum = accept(sevid,(struct sockaddr*)&new_client->csock,&addrlen);
+        if(new_client->cidnum !=-1)
         {
-            pthread_create(&tid,NULL,pthread_fun,&cid1.cidnum);
+            Insertend(client_list, new_client);
+            pthread_create(&tid,NULL,pthread_fun,&new_client->cidnum);
             pthread_detach(tid);
-            printf("用户登录到IP:%s:%d\n",inet_ntoa(cid1.csock.sin_addr),ntohs(cid1.csock.sin_port));
+            printf("用户登录到IP:%s:%d\n",inet_ntoa(new_client->csock.sin_addr),ntohs(new_client->csock.sin_port));
         }
     }
     return 0;
 }
 
-int main(){
+int main(int argc, char *argv[]){
 
+    int sevid; //服务器sevid
     char hostname[256];
     gethostname(hostname, sizeof(hostname));
-    Tcp_init(hostname, "8991");
+    puts(hostname);
+    client_list = newLinkNode(0);
+    // Tcp_init(argv[1], argv[2]);
+    
+    // acceptlink(sevid);
+
+    close(sevid);
     return 0;
 }
