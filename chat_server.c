@@ -1,6 +1,6 @@
 #include "chat_head.h"
 
-cid_t *client_list; // 定义client_list变量
+extern cid_t *client_list; // 定义client_list变量
 
 void * pthread_fun(void *arg)
 {
@@ -11,7 +11,12 @@ void * pthread_fun(void *arg)
     bzero(bufs,sizeof(bufs));
     display(client_list);
 
-
+    //----------cJSON代码------------
+    cJSON * json_res = NULL;
+    cJSON * json_name = NULL;
+    cJSON * json_info = NULL;
+    // cJSON* json_sign = NULL;
+    cJSON* json_fuhao = NULL;
 
 
     while(1)
@@ -19,9 +24,21 @@ void * pthread_fun(void *arg)
         //cid 要传递过来
         bzero(bufs,sizeof(bufs));
         len = recv(pcid,bufs,sizeof(bufs),0);
-        bufs[len-1]='\0';
-        printf("%s\n",bufs);
-        if(!strncmp(bufs,"quit",4))
+
+
+        //————————————————cJSON代码块————————————————
+        json_res = cJSON_Parse(bufs);
+        //姓名
+        json_name = cJSON_GetObjectItem(json_res,"name");
+        //信息
+        json_info = cJSON_GetObjectItem(json_res,"info");
+        //签名
+        // json_sign = cJSON_GetObjectItem(json_res,"sign");
+        //符号
+        json_fuhao = cJSON_GetObjectItem(json_res,"fuhao");
+        //————————————————cJSON代码块————————————————
+        
+        if(!strncmp(json_info->valuestring,"quit",4))
         {
             printf("客户端正在退出\n");
             new_client->user_status.status=0;
@@ -36,15 +53,16 @@ void * pthread_fun(void *arg)
             display(client_list);
             break;
         }
-        if(!strncmp(bufs,"userinfo:",9))
-        {
-            strtok(bufs,":");
-            strcpy(new_client->user_status.username,strtok(NULL,":"));
-            new_client->user_status.status=1;
-        }
+        printf("%s%s:%s\n",json_name->valuestring,json_fuhao->valuestring,json_info->valuestring);
+        // if(!strncmp(bufs,"userinfo:",9))
+        // {
+        //     strtok(bufs,":");
+        //     strcpy(new_client->user_status.username,strtok(NULL,":"));
+        //     new_client->user_status.status=1;
+        // }
 
     }
-    //shutdown(pcid,SHUT_RDWR);
+    shutdown(pcid,SHUT_RDWR);
     close(pcid);
     pcid = -1; 
     //线程退出

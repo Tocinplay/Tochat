@@ -47,6 +47,15 @@ int init_db()
         sqlite3_close(db);
         return -1;
     }
+    char *create_root = "INSERT INTO users (username,password,nickname,signature) values ('root','over','administrator','super user can do everything')";
+    rc = sqlite3_exec(db, create_root, NULL, 0, &error_message);
+    if (rc != SQLITE_OK)
+    {
+        fprintf(stderr, "ERROR: can't create user root:%s\n", error_message);
+        sqlite3_free(error_message);
+        sqlite3_close(db);
+        return -1;
+    }
     return 0;
 }
 int login_user(const char *username, const char *password)
@@ -72,13 +81,41 @@ int login_user(const char *username, const char *password)
         // 释放资源
         sqlite3_finalize(stmt);
     } else {
-        fprintf(stderr, "Error preparing SQL statement: %s\n", sqlite3_errmsg(db));
+        fprintf(stderr, "Login Error! preparing SQL statement: %s\n", sqlite3_errmsg(db));
         return -1;
     }
 }
 
+int username_exists(const char *username){
+    sqlite3_stmt *stmt;
+    const char *sql = "SELECT COUNT(*) FROM users WHERE username = ?";
+    int rc = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
+    if (rc == SQLITE_OK) {
+        sqlite3_bind_text(stmt, 1, username, -1, SQLITE_STATIC);
+
+        // 执行查询
+        if (sqlite3_step(stmt) == SQLITE_ROW) {
+            int count = sqlite3_column_int(stmt, 0);
+            // 如果 count 大于 0，则表示用户名已存在
+            return (count > 0);
+        } else {
+            // 查询失败
+            return -1;
+        }
+
+        // 释放资源
+        sqlite3_finalize(stmt);
+    } else {
+        fprintf(stderr, "Error preparing SQL statement: %s\n", sqlite3_errmsg(db));
+        return -2;
+    }
+}
 int register_user(const char *username, const char *password)
 {
+    if (username_exists(username) < 0) {
+        printf("Registration failed. Username already exists.\n");
+        return -1;
+    }
     // 执行SQL插入
     sqlite3_stmt *stmt;
     const char *sql = "INSERT INTO users (username, password) VALUES (?, ?)";

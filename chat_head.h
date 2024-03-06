@@ -29,7 +29,7 @@ typedef struct clientid{
     struct user_socket user_status;
     struct clientid *next;    //链表的下一节
 }cid_t;
-extern cid_t *client_list;
+cid_t *client_list;
 
 
 cid_t * newLinkNode(int val){
