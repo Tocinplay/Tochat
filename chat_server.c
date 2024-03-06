@@ -2,40 +2,48 @@
 
 cid_t *client_list; // 定义client_list变量
 
-void * pthread_fun(void * arg)
+void * pthread_fun(void *arg)
 {
-    //cid是从主线程传过来的。   
-    int pcid = *(int *)arg;
+    //cid是从主线程传过来的。
+    cid_t *new_client = (cid_t *)arg;   
+    int pcid = new_client->cidnum;
     //清空bufs
     bzero(bufs,sizeof(bufs));
-    cJSON * json_res = NULL;
-    cJSON * json_name = NULL;
-    cJSON * json_code = NULL;
-    cJSON * json_info = NULL;
-    cJSON* json_sign = NULL;
-    cJSON* fuhao = NULL;
+    display(client_list);
 
-    while(strncmp(bufs,"quit",4))
+
+
+
+    while(1)
     {
         //cid 要传递过来
         bzero(bufs,sizeof(bufs));
         len = recv(pcid,bufs,sizeof(bufs),0);
-        //解析bufs
-        json_res = cJSON_Parse(bufs);
-        //姓名
-        json_name = cJSON_GetObjectItem(json_res,"name");
-        //密码
-        json_code = cJSON_GetObjectItem(json_res,"code");
-        //信息
-        json_info = cJSON_GetObjectItem(json_res,"info");
-        //签名
-        json_sign = cJSON_GetObjectItem(json_res,"sign");
-        //符号
-        fuhao = cJSON_GetObjectItem(json_res,"fuhao");
-        printf("%s:%s-%s:%s",json_name->valuestring,json_sign->valuestring,fuhao->valuestring,json_info->valuestring);
+        bufs[len-1]='\0';
+        printf("%s\n",bufs);
+        if(!strncmp(bufs,"quit",4))
+        {
+            printf("客户端正在退出\n");
+            new_client->user_status.status=0;
+            if(!deletenode(new_client))
+            {
+                printf("客户端退出成功，删除节点成功\n");
+            }
+            else
+            {
+                printf("客户端退出失败，未删除节点\n");
+            }
+            display(client_list);
+            break;
+        }
+        if(!strncmp(bufs,"userinfo:",9))
+        {
+            strtok(bufs,":");
+            strcpy(new_client->user_status.username,strtok(NULL,":"));
+            new_client->user_status.status=1;
+        }
 
     }
-    //线程退出 - cid关闭是不是一件事？
     //shutdown(pcid,SHUT_RDWR);
     close(pcid);
     pcid = -1; 
@@ -77,30 +85,36 @@ int Tcp_init(const char *ip, const char *port)
     while(1)
     {
         cid_t *new_client = (cid_t*)malloc(sizeof(cid_t));
+        new_client->next = NULL;
         addrlen = sizeof(new_client->csock);
         new_client->cidnum = accept(sevid,(struct sockaddr*)&new_client->csock,&addrlen);
+        
         if(new_client->cidnum !=-1)
-        {
+        {   
+            new_client->user_status.status=1;//登录状态设置在线
             Insertend(client_list, new_client);
-            pthread_create(&tid,NULL,pthread_fun,&new_client->cidnum);
+            pthread_create(&tid,NULL,pthread_fun,new_client);
             pthread_detach(tid);
             printf("用户登录到IP:%s:%d\n",inet_ntoa(new_client->csock.sin_addr),ntohs(new_client->csock.sin_port));
         }
     }
+    close(sevid);
     return 0;
 }
 
 int main(int argc, char *argv[]){
 
-    int sevid; //服务器sevid
-    char hostname[256];
-    gethostname(hostname, sizeof(hostname));
-    puts(hostname);
-    client_list = newLinkNode(0);
-    // Tcp_init(argv[1], argv[2]);
-    
-    // acceptlink(sevid);
+    if(argc < 3){
+        perror("useage:./server + ip + port");
+        return -1;
+    }
 
-    close(sevid);
+
+    client_list = newLinkNode(0);
+    Tcp_init(argv[1], argv[2]);
+    
+
+
+    
     return 0;
 }
