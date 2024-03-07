@@ -24,7 +24,7 @@ void *pthread_fun(void *arg)
     cJSON *json_fuhao = NULL;  //personal style sign
     cJSON *json_conn = NULL;  //link type
     cJSON *json_time = NULL;
-
+    cJSON *json_group = NULL;
 
 
     while (1)
@@ -59,13 +59,14 @@ void *pthread_fun(void *arg)
         json_fuhao = cJSON_GetObjectItem(json_res, "fuhao");
         // bzero(fh,5);
         // strcat(fh, json_fuhao->valuestring);
+
+        //群聊
+        json_group = cJSON_GetObjectItem(json_res, "group_id");
+
         // 提示第一次连接
         if (flag)
-        {
-            
+        {          
             json_conn = cJSON_GetObjectItem(json_res, "conn");
-
-
             // 如果是第一次连接就把用户名写入链表结构体中，不是第一次连接就不用写了
             if (!strncmp(json_conn->valuestring, "f1rst", 5))
             {
@@ -83,8 +84,8 @@ void *pthread_fun(void *arg)
             
         }
         
+        //时间处理函数
         json_time_value = (time_t)json_time->valueint;
-        
         bzero(formatted_time,sizeof(formatted_time));
         strftime(formatted_time, sizeof(formatted_time), "%Y-%m-%d %H:%M:%S", localtime(&json_time_value));
 
@@ -108,6 +109,20 @@ void *pthread_fun(void *arg)
             break;
         }
         
+        if(json_group->valuestring != NULL && !strcmp(json_group->valuestring,"10086")){
+            cid_t *tmp = client_list->next;
+            while(tmp != NULL){
+                if(tmp->cidnum != new_client->cidnum){
+                    send(client_list->cidnum, bufs, sizeof(bufs), 0);
+                }
+            }
+        }
+
+
+
+
+
+
         printf("%s%s%s%s%s", json_name->valuestring, json_fuhao->valuestring, formatted_time, json_fuhao->valuestring, json_info->valuestring);
         // while(1);
     }
@@ -127,6 +142,7 @@ int Tcp_init(const char *ip, const char *port)
         perror("socket create fail!\n");
         return -1;
     }
+    client_list->cidnum=sevid;
     printf("socket create success:%d\n", sevid);
 
     // 2.绑定地址结构体
@@ -134,6 +150,8 @@ int Tcp_init(const char *ip, const char *port)
     sevaddr.sin_family = AF_INET;
     sevaddr.sin_addr.s_addr = inet_addr(ip);
     sevaddr.sin_port = htons(atoi(port));
+    client_list->csock = sevaddr;
+
 
     int bindinfo = bind(sevid, (struct sockaddr *)&sevaddr, sizeof(sevaddr));
     if (bindinfo < 0)

@@ -84,6 +84,8 @@ int main(int argc, char const *argv[])
 
     // 添加字符串类型到节点当中
     cJSON_AddStringToObject(json_pointer, "fuhao", ">");
+    //  添加群组类型到节点中
+    cJSON_AddStringToObject(json_pointer, "group_id","10086");
     // 数据整理
     char *str = NULL;
 
@@ -91,7 +93,7 @@ int main(int argc, char const *argv[])
     //第一次发送过去，请求更新节点,保存用户名
     cJSON_AddStringToObject(json_pointer, "conn", "f1rst");
     str = cJSON_Print(json_pointer);
-    puts(str);
+    // puts(str);
     send(clid, str, strlen(str), 0);
     cJSON_DeleteItemFromObject(json_pointer, "conn");
     str = NULL;
@@ -107,7 +109,7 @@ int main(int argc, char const *argv[])
         cJSON_AddNumberToObject(json_pointer, "time",tm2);
 
         cJSON_AddStringToObject(json_pointer, "info", bufs);
-        puts(bufs);
+        // puts(bufs);
         // jason格式转换成字符串格式
         str = cJSON_Print(json_pointer);
         send(clid, str, strlen(str), 0);
