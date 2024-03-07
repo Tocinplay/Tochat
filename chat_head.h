@@ -10,6 +10,11 @@
 #include <pthread.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <ifaddrs.h>
+#include <netinet/in.h>
+#include <net/if.h>
+#include <time.h>
+#include <sys/time.h>
 #include "cJSON.h"
 
 
@@ -66,7 +71,7 @@ void display(cid_t *node)
 
     cid_t *tmp = node->next;
     while(tmp != NULL){
-        printf("clientid:%d IP:%s:%d ",tmp->cidnum,inet_ntoa(tmp->csock.sin_addr),ntohs(tmp->csock.sin_port));
+        printf("user:%s clientid:%d IP:%s:%d ",tmp->user_status.username,tmp->cidnum,inet_ntoa(tmp->csock.sin_addr),ntohs(tmp->csock.sin_port));
         if(tmp->user_status.status == 1)
         {
             printf("在线\n");
