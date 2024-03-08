@@ -15,10 +15,13 @@
 #include <net/if.h>
 #include <time.h>
 #include <sys/time.h>
+#include <sys/poll.h>
+#include <signal.h>
+#include <semaphore.h>
 #include "cJSON.h"
 
 
-char bufs[512] = "";//线程语句缓存
+char bufs[2048] = "";//线程语句缓存
 int len;
 
 //用户状态结构体
@@ -36,6 +39,12 @@ typedef struct clientid{
 }cid_t;
 cid_t *client_list;
 
+typedef struct chatroom{
+    int chatnum;
+    cid_t *human;
+    struct chatroom *next;
+}qun_t;
+qun_t *qun_list;
 
 cid_t * newLinkNode(int val){
     cid_t *cidlist = (cid_t *)malloc(sizeof(cid_t));
@@ -107,6 +116,15 @@ int deletenode(cid_t *delnode)
 
 
 
-
+//cJSON结构体
+// {
+//         "name": "root",
+//         "fuhao":        ">",
+//         "group_id":     10086,
+//         "conn": "f1rst"
+//         "time": 1709883550,
+//         "info": "1\n"
+//         
+// }
 
 #endif
